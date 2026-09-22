@@ -1,0 +1,46 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+.pytest_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+ENV/
+
+# Node & Frontend
+frontend/node_modules/
+frontend/.pnp
+frontend/.pnp.js
+frontend/coverage/
+frontend/.vite/
+
+# Temporary / OS
+*.tmp
+*.log
+.DS_Store
+Thumbs.db
+screenshot_comparison_view.png
+screenshot_dark_mode*.png
+screenshot_dark_theme.png
+screenshot_dashboard*.png
+screenshot_settings_modal.png
