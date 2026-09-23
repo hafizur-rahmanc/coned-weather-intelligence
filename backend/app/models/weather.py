@@ -140,5 +140,5 @@ class UserSettings(BaseModel):
     cold_threshold_high: float = 24.0
     cold_threshold_extreme: float = 14.0
     rapid_drop_threshold: float = 15.0
-    auto_refresh_minutes: int = 5
+    auto_refresh_minutes: int = 30
     temp_unit: str = "F"

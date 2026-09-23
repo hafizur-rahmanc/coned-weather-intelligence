@@ -52,7 +52,7 @@ export const App: React.FC = () => {
     cold_threshold_high: 24.0,
     cold_threshold_extreme: 14.0,
     rapid_drop_threshold: 15.0,
-    auto_refresh_minutes: 5,
+    auto_refresh_minutes: 30,
     temp_unit: 'F'
   });
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);

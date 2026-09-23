@@ -60,12 +60,23 @@ export const CurrentConditionsCard: React.FC<CurrentConditionsCardProps> = ({
           </span>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: subTextColor }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: subTextColor, flexWrap: 'wrap' }}>
           <Clock size={13} />
           <span>Observed: {new Date(conditions.observation_time).toLocaleTimeString('en-US', { timeZone: 'America/New_York', hour: 'numeric', minute: '2-digit' })} EDT</span>
           <span style={{ margin: '0 4px' }}>•</span>
           <ShieldCheck size={13} color="#10b981" />
           <span style={{ color: '#10b981', fontWeight: 600 }}>NWS Quality Verified</span>
+          <span style={{
+            fontSize: '11px',
+            color: isDarkMode ? '#94a3b8' : '#64748b',
+            backgroundColor: isDarkMode ? '#1a2e48' : '#f1f5f9',
+            padding: '2px 7px',
+            borderRadius: '4px',
+            border: `1px solid ${borderColor}`,
+            marginLeft: '4px'
+          }}>
+            {station.id === 'KNYC' ? 'Hourly Synoptic METAR' : 'ASOS Rapid METAR'}
+          </span>
         </div>
       </div>
 

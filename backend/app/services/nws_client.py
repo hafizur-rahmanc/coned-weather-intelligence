@@ -1,6 +1,7 @@
 import time
 import math
 import httpx
+import re
 from datetime import datetime, timezone, timedelta
 from zoneinfo import ZoneInfo
 from typing import Dict, List, Optional, Any, Tuple
@@ -63,11 +64,127 @@ class NWSClient:
     def _set_cache(self, key: str, data: Any):
         self.cache[key] = (time.time(), data)
 
+    async def get_tgftp_metar(self, station_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Fetches real-time METAR directly from NOAA Telecommunications Gateway (tgftp.nws.noaa.gov).
+        This eliminates the 15-60 minute ingestion latency present in api.weather.gov for stations like KNYC.
+        """
+        url = f"https://tgftp.nws.noaa.gov/data/observations/metar/stations/{station_id}.TXT"
+        try:
+            async with httpx.AsyncClient(timeout=6.0) as client:
+                res = await client.get(url, headers={"User-Agent": USER_AGENT})
+                if res.status_code != 200:
+                    return None
+                lines = res.text.strip().split("\n")
+                if len(lines) < 2:
+                    return None
+                
+                header_time = lines[0].strip()
+                metar_text = lines[1].strip()
+                dt_utc = datetime.strptime(header_time, "%Y/%m/%d %H:%M").replace(tzinfo=timezone.utc)
+                dt_ny = dt_utc.astimezone(NY_TZ)
+
+                # High-precision temperature and dew point from remarks: T01610094
+                t_match = re.search(r'\bT([01])(\d{3})([01])(\d{3})\b', metar_text)
+                temp_c = None
+                dew_c = None
+                if t_match:
+                    s_t, val_t, s_d, val_d = t_match.groups()
+                    temp_c = float(val_t) / 10.0 * (-1.0 if s_t == '1' else 1.0)
+                    dew_c = float(val_d) / 10.0 * (-1.0 if s_d == '1' else 1.0)
+                else:
+                    std_match = re.search(r'\b(M?\d{2})/(M?\d{2})\b', metar_text)
+                    if std_match:
+                        t_str, d_str = std_match.groups()
+                        temp_c = float(t_str.replace("M", "-"))
+                        dew_c = float(d_str.replace("M", "-"))
+
+                if temp_c is None:
+                    return None
+
+                temp_f = round(temp_c * 9.0 / 5.0 + 32.0, 1)
+                dew_f = round(dew_c * 9.0 / 5.0 + 32.0, 1) if dew_c is not None else None
+
+                # Relative humidity calculation via August-Roche-Magnus
+                rh = None
+                if dew_c is not None:
+                    rh = round(min(max(100.0 * (math.exp((17.625 * dew_c) / (243.04 + dew_c)) / math.exp((17.625 * temp_c) / (243.04 + temp_c))), 0.0), 100.0), 1)
+
+                # Wind: 06020G34KT
+                w_match = re.search(r'\b(\d{3}|VRB)(\d{2,3})(?:G(\d{2,3}))?KT\b', metar_text)
+                wind_deg = None
+                wind_mph = 0.0
+                gust_mph = None
+                if w_match:
+                    deg_str, spd_str, gst_str = w_match.groups()
+                    wind_deg = float(deg_str) if deg_str != "VRB" else None
+                    wind_mph = round(float(spd_str) * 1.15078, 1)
+                    if gst_str:
+                        gust_mph = round(float(gst_str) * 1.15078, 1)
+
+                # Altimeter: A3047 -> 30.47 inHg
+                alt_match = re.search(r'\bA(\d{4})\b', metar_text)
+                press_inhg = float(alt_match.group(1)) / 100.0 if alt_match else None
+                press_hpa = round(press_inhg * 33.8639, 1) if press_inhg else None
+
+                # Visibility: 10SM
+                vis_match = re.search(r'\b(\d+/\d+|\d+)SM\b', metar_text)
+                vis_miles = 10.0
+                if vis_match and "/" not in vis_match.group(1):
+                    vis_miles = float(vis_match.group(1))
+
+                # Sky condition
+                cond_desc = "Partly Cloudy"
+                icon_code = "sct"
+                if "OVC" in metar_text or "VV" in metar_text:
+                    cond_desc = "Overcast"
+                    icon_code = "ovc"
+                elif "BKN" in metar_text:
+                    cond_desc = "Mostly Cloudy"
+                    icon_code = "bkn"
+                elif "FEW" in metar_text:
+                    cond_desc = "Mostly Clear"
+                    icon_code = "few"
+                elif "CLR" in metar_text or "SKC" in metar_text:
+                    cond_desc = "Clear"
+                    icon_code = "skc"
+                
+                if "RA" in metar_text:
+                    cond_desc = "Rain"
+                    icon_code = "rain"
+                elif "SN" in metar_text:
+                    cond_desc = "Snow"
+                    icon_code = "snow"
+
+                return {
+                    "utc_time": dt_utc,
+                    "ny_time": dt_ny,
+                    "temperature_f": temp_f,
+                    "temperature_c": round(temp_c, 1),
+                    "dewpoint_f": dew_f,
+                    "relative_humidity_pct": rh,
+                    "wind_speed_mph": wind_mph,
+                    "wind_direction_deg": wind_deg,
+                    "wind_direction_cardinal": deg_to_cardinal(wind_deg) if wind_deg is not None else "VRB",
+                    "wind_gust_mph": gust_mph,
+                    "pressure_inhg": press_inhg,
+                    "pressure_hpa": press_hpa,
+                    "visibility_miles": vis_miles,
+                    "weather_condition": cond_desc,
+                    "weather_icon": f"https://api.weather.gov/icons/land/day/{icon_code}?size=medium",
+                    "metar_raw": metar_text
+                }
+        except Exception:
+            return None
+
     async def get_current_conditions(self, station: StationInfo) -> CurrentConditions:
         cache_key = f"current_{station.id}"
-        cached = self._get_from_cache(cache_key, ttl_seconds=180) # 3 min
+        cached = self._get_from_cache(cache_key, ttl_seconds=120) # 2 min
         if cached:
             return cached
+
+        # Check real-time NOAA TGFTP METAR
+        tgftp_data = await self.get_tgftp_metar(station.id)
 
         url = f"https://api.weather.gov/stations/{station.id}/observations/latest"
         data = None
@@ -80,6 +197,34 @@ class NWSClient:
             pass
 
         if not data or "properties" not in data:
+            if tgftp_data:
+                feels_f = calculate_wind_chill(tgftp_data["temperature_f"], tgftp_data["wind_speed_mph"])
+                cond = CurrentConditions(
+                    station_id=station.id,
+                    station_name=station.name,
+                    location=station.location,
+                    observation_time=tgftp_data["utc_time"],
+                    data_retrieved_time=datetime.now(timezone.utc),
+                    temperature_f=tgftp_data["temperature_f"],
+                    temperature_c=tgftp_data["temperature_c"],
+                    feels_like_f=feels_f,
+                    dewpoint_f=tgftp_data["dewpoint_f"],
+                    relative_humidity_pct=tgftp_data["relative_humidity_pct"],
+                    wind_speed_mph=tgftp_data["wind_speed_mph"],
+                    wind_direction_deg=tgftp_data["wind_direction_deg"],
+                    wind_direction_cardinal=tgftp_data["wind_direction_cardinal"],
+                    wind_gust_mph=tgftp_data["wind_gust_mph"],
+                    pressure_inhg=tgftp_data["pressure_inhg"],
+                    pressure_hpa=tgftp_data["pressure_hpa"],
+                    precipitation_last_hour_in=0.0,
+                    weather_condition=tgftp_data["weather_condition"],
+                    weather_icon=tgftp_data["weather_icon"],
+                    visibility_miles=tgftp_data["visibility_miles"],
+                    data_source="NOAA / National Weather Service (tgftp.nws.noaa.gov real-time METAR)"
+                )
+                self._set_cache(cache_key, cond)
+                return cond
+
             # Fallback observation if upstream NWS is slow
             now = datetime.now(timezone.utc)
             cond = CurrentConditions(
@@ -109,6 +254,41 @@ class NWSClient:
             return cond
 
         props = data["properties"]
+        obs_time_str = props.get("timestamp")
+        try:
+            obs_dt = datetime.fromisoformat(obs_time_str.replace("Z", "+00:00"))
+        except Exception:
+            obs_dt = datetime.now(timezone.utc)
+
+        # Prioritize tgftp if it has a newer observation timestamp than api.weather.gov
+        if tgftp_data and tgftp_data["utc_time"] > obs_dt:
+            feels_f = calculate_wind_chill(tgftp_data["temperature_f"], tgftp_data["wind_speed_mph"])
+            cond = CurrentConditions(
+                station_id=station.id,
+                station_name=station.name,
+                location=station.location,
+                observation_time=tgftp_data["utc_time"],
+                data_retrieved_time=datetime.now(timezone.utc),
+                temperature_f=tgftp_data["temperature_f"],
+                temperature_c=tgftp_data["temperature_c"],
+                feels_like_f=feels_f,
+                dewpoint_f=tgftp_data["dewpoint_f"],
+                relative_humidity_pct=tgftp_data["relative_humidity_pct"],
+                wind_speed_mph=tgftp_data["wind_speed_mph"],
+                wind_direction_deg=tgftp_data["wind_direction_deg"],
+                wind_direction_cardinal=tgftp_data["wind_direction_cardinal"],
+                wind_gust_mph=tgftp_data["wind_gust_mph"],
+                pressure_inhg=tgftp_data["pressure_inhg"],
+                pressure_hpa=tgftp_data["pressure_hpa"],
+                precipitation_last_hour_in=0.0,
+                weather_condition=tgftp_data["weather_condition"],
+                weather_icon=tgftp_data["weather_icon"],
+                visibility_miles=tgftp_data["visibility_miles"],
+                data_source="NOAA / National Weather Service (tgftp.nws.noaa.gov real-time METAR)"
+            )
+            self._set_cache(cache_key, cond)
+            return cond
+
         raw_temp_c = props.get("temperature", {}).get("value")
         temp_f = c_to_f(raw_temp_c) if raw_temp_c is not None else 62.0
         temp_c = raw_temp_c if raw_temp_c is not None else round((temp_f - 32.0) * 5.0 / 9.0, 1)
@@ -145,12 +325,6 @@ class NWSClient:
             feels_f = c_to_f(raw_hi_c)
         else:
             feels_f = calculate_wind_chill(temp_f, wind_mph or 0.0)
-
-        obs_time_str = props.get("timestamp")
-        try:
-            obs_dt = datetime.fromisoformat(obs_time_str.replace("Z", "+00:00"))
-        except Exception:
-            obs_dt = datetime.now(timezone.utc)
 
         condition_desc = props.get("textDescription") or "Partly Cloudy"
         icon_url = props.get("icon")
@@ -557,9 +731,24 @@ class NWSClient:
                     hourly_dict[key] = (dt, tf)
 
         history = sorted(hourly_dict.values(), key=lambda x: x[0])
-        # Always retain the latest observation
+        # Always retain the latest observation from API
         if raw_points and (not history or raw_points[-1][0] != history[-1][0]):
             history.append(raw_points[-1])
+
+        # Augment with real-time NOAA TGFTP METAR if newer than latest API observation
+        try:
+            tgftp_data = await self.get_tgftp_metar(station.id)
+            if tgftp_data:
+                latest_tg_dt = tgftp_data["ny_time"]
+                latest_tg_temp = tgftp_data["temperature_f"]
+                if not history:
+                    history.append((latest_tg_dt, latest_tg_temp))
+                elif (latest_tg_dt - history[-1][0]).total_seconds() > 300: # at least 5 minutes newer
+                    history.append((latest_tg_dt, latest_tg_temp))
+                elif abs((latest_tg_dt - history[-1][0]).total_seconds()) <= 300:
+                    history[-1] = (latest_tg_dt, latest_tg_temp)
+        except Exception:
+            pass
         
         if not history:
             # Fallback history if API history is unavailable

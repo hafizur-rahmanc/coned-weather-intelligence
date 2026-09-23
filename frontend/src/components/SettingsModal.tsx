@@ -30,7 +30,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       cold_threshold_high: 24.0,
       cold_threshold_extreme: 14.0,
       rapid_drop_threshold: 15.0,
-      auto_refresh_minutes: 5,
+      auto_refresh_minutes: 30,
       temp_unit: 'F'
     });
   };
@@ -211,10 +211,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               }}
             >
               <option value={0}>Manual Refresh Only (Off)</option>
-              <option value={2}>Every 2 Minutes</option>
-              <option value={5}>Every 5 Minutes (Recommended)</option>
+              <option value={5}>Every 5 Minutes</option>
               <option value={10}>Every 10 Minutes</option>
               <option value={15}>Every 15 Minutes</option>
+              <option value={30}>Every 30 Minutes (Recommended / Default)</option>
+              <option value={60}>Every 60 Minutes (Hourly)</option>
             </select>
           </div>
 
