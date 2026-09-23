@@ -43,7 +43,7 @@ export const App: React.FC = () => {
 
   // Settings
   const [settings, setSettings] = useState<UserSettings>({
-    hdd_base_temp: 65.0,
+    hdd_base_temp: 62.0,
     cold_threshold_elevated: 34.0,
     cold_threshold_high: 24.0,
     cold_threshold_extreme: 14.0,

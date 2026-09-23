@@ -159,10 +159,10 @@ export const MultiDayForecastSection: React.FC<MultiDayForecastSectionProps> = (
           <Flame size={20} color="#ea580c" />
           <div>
             <div style={{ fontSize: '11px', color: subTextColor, fontWeight: 600, textTransform: 'uppercase' }}>
-              {activeTab}-Day Cumulative HDD
+              {activeTab}-Day Cumulative AHDD
             </div>
             <div style={{ fontSize: '16px', fontWeight: 800, color: textColor }}>
-              {totalHdd.toFixed(1)} HDD
+              {totalHdd.toFixed(1)} AHDD
             </div>
           </div>
         </div>
@@ -179,10 +179,10 @@ export const MultiDayForecastSection: React.FC<MultiDayForecastSectionProps> = (
           <TrendingUp size={20} color="#0066cc" />
           <div>
             <div style={{ fontSize: '11px', color: subTextColor, fontWeight: 600, textTransform: 'uppercase' }}>
-              Daily Average HDD
+              Daily Average AHDD
             </div>
             <div style={{ fontSize: '16px', fontWeight: 800, color: textColor }}>
-              {avgHdd} HDD/day
+              {avgHdd} AHDD/day
             </div>
           </div>
         </div>
@@ -409,7 +409,7 @@ export const MultiDayForecastSection: React.FC<MultiDayForecastSectionProps> = (
                 }}>
                   <Flame size={12} color={(d.hdd || 0) > 15 ? "#ef4444" : "#0066cc"} />
                   <span style={{ color: (d.hdd || 0) > 15 ? "#ef4444" : "#0066cc", fontWeight: 700 }}>
-                    {d.hdd} HDD
+                    {d.hdd} AHDD
                   </span>
                 </div>
 

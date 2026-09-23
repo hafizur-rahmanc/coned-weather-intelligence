@@ -210,24 +210,54 @@ export const TemperatureTrendChart: React.FC<TemperatureTrendChartProps> = ({
             x1={nowX}
             y1={paddingTop - 10}
             x2={nowX}
-            y2={paddingTop + innerHeight + 10}
+            y2={paddingTop + innerHeight + 6}
             stroke="#dc2626"
             strokeWidth="2.5"
           />
-          {/* NOW Badge */}
+          {/* Top NOW Badge */}
           <rect x={nowX - 22} y={paddingTop - 24} width="44" height="18" rx="4" fill="#dc2626" />
           <text x={nowX} y={paddingTop - 11} fill="#ffffff" fontSize="10" fontWeight="800" textAnchor="middle" letterSpacing="0.5px">
             NOW
           </text>
 
-          {/* X Axis Time Labels */}
+          {/* Bottom NOW Marker Time Callout Badge (Eliminates text overlap) */}
+          <g>
+            <rect
+              x={nowX - 32}
+              y={paddingTop + innerHeight + 6}
+              width={64}
+              height={18}
+              rx={4}
+              fill="#dc2626"
+            />
+            <text
+              x={nowX}
+              y={paddingTop + innerHeight + 19}
+              fill="#ffffff"
+              fontSize="9"
+              fontWeight="800"
+              textAnchor="middle"
+            >
+              {allPoints[nowIndex]?.time_label || 'NOW'}
+            </text>
+          </g>
+
+          {/* X Axis Time Labels - Filtered to prevent collision with NOW marker */}
           {allPoints.map((p, i) => {
-            if (i % 8 === 0 || i === nowIndex || i === count - 1) {
+            if (i === nowIndex) return null; // Handled cleanly by the dedicated NOW callout badge above
+
+            if (i % 8 === 0 || i === count - 1) {
               const x = getX(i);
+
+              // Suppress standard x-axis label if it's too close to the NOW marker badge (< 52px)
+              if (Math.abs(x - nowX) < 52) {
+                return null;
+              }
+
               return (
                 <g key={`x-${i}`}>
                   <line x1={x} y1={paddingTop + innerHeight} x2={x} y2={paddingTop + innerHeight + 5} stroke={subTextColor} />
-                  <text x={x} y={paddingTop + innerHeight + 18} fill={i === nowIndex ? '#dc2626' : subTextColor} fontSize="9" fontWeight={i === nowIndex ? '800' : '500'} textAnchor="middle">
+                  <text x={x} y={paddingTop + innerHeight + 18} fill={subTextColor} fontSize="9" fontWeight="500" textAnchor="middle">
                     {p.time_label}
                   </text>
                 </g>

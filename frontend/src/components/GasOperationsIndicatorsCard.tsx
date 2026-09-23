@@ -84,7 +84,7 @@ export const GasOperationsIndicatorsCard: React.FC<GasOperationsIndicatorsCardPr
             borderRadius: '4px',
             fontWeight: 600
           }}>
-            HDD Base: {indicators.hdd_base_temp}°F
+            AHDD Base: {indicators.hdd_base_temp}°F
           </span>
           <button
             onClick={onOpenSettings}
@@ -154,7 +154,7 @@ export const GasOperationsIndicatorsCard: React.FC<GasOperationsIndicatorsCardPr
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontSize: '12px', fontWeight: 700, color: subTextColor, textTransform: 'uppercase' }}>
-              Heating Degree Days (HDD)
+              Heating Degree Days (HDD / AHDD)
             </span>
             <ThermometerSnowflake size={16} color="#0066cc" />
           </div>
@@ -167,10 +167,13 @@ export const GasOperationsIndicatorsCard: React.FC<GasOperationsIndicatorsCardPr
           }}>
             {indicators.daily_hdd} <span style={{ fontSize: '14px', fontWeight: 500, color: subTextColor }}>Today</span>
           </div>
+          <div style={{ fontSize: '10px', color: subTextColor, marginTop: '2px', fontStyle: 'italic' }}>
+            AHDD = 62°F - Daily Mean Temp
+          </div>
           <div style={{
             display: 'flex',
             justifyContent: 'space-between',
-            marginTop: '10px',
+            marginTop: '8px',
             paddingTop: '8px',
             borderTop: `1px dashed ${borderColor}`,
             fontSize: '11px'

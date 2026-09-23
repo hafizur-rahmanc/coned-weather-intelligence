@@ -33,7 +33,7 @@ class TestGasIndicators(unittest.TestCase):
             wind_speed_mph=12.0,
             weather_condition="Mostly Cloudy"
         )
-        # Mock 7 daily forecasts: low 30, high 44 -> avg 37 -> HDD (65-37) = 28
+        # Mock 7 daily forecasts: low 30, high 44 -> avg 37 -> AHDD (62-37) = 25
         self.daily = [
             DailyForecastItem(
                 date=f"2026-12-{15+i}",
@@ -41,7 +41,7 @@ class TestGasIndicators(unittest.TestCase):
                 min_temp_f=30.0 + i,
                 max_temp_f=44.0 + i,
                 avg_temp_f=37.0 + i,
-                hdd=max(0.0, 65.0 - (37.0 + i)),
+                hdd=max(0.0, 62.0 - (37.0 + i)),
                 weather_condition="Cloudy"
             )
             for i in range(7)
@@ -62,11 +62,11 @@ class TestGasIndicators(unittest.TestCase):
             (self.now, 42.0)
         ]
 
-    def test_hdd_standard_base(self):
-        engine = GasOperationsEngine(UserSettings(hdd_base_temp=65.0))
+    def test_hdd_coned_standard_base(self):
+        engine = GasOperationsEngine(UserSettings(hdd_base_temp=62.0))
         ind = engine.calculate_indicators(self.station, self.current, self.hourly, self.daily, self.recent)
-        self.assertEqual(ind.hdd_base_temp, 65.0)
-        self.assertEqual(ind.daily_hdd, 28.0)
+        self.assertEqual(ind.hdd_base_temp, 62.0)
+        self.assertEqual(ind.daily_hdd, 25.0)
         self.assertTrue(ind.cumulative_hdd_3d > 0)
         self.assertTrue(ind.cumulative_hdd_7d > ind.cumulative_hdd_3d)
 

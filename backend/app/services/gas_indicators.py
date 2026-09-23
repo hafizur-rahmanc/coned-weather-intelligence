@@ -146,5 +146,5 @@ class GasOperationsEngine:
             rapid_drop_message=rapid_drop_msg,
             composite_weather_index=cwi,
             composite_weather_index_label=cwi_label,
-            calculation_note="Weather-based operational planning indicators; does not represent metered gas sendout."
+            calculation_note="Con Edison Gas Control: Actual Heating Degree Days (AHDD) = 62°F - Daily Mean Temperature; does not represent metered gas sendout."
         )

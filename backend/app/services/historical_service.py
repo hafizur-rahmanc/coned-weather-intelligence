@@ -14,7 +14,7 @@ class HistoricalWeatherService:
         self,
         station: StationInfo,
         days: int = 7,
-        hdd_base_temp: float = 65.0
+        hdd_base_temp: float = 62.0
     ) -> List[HistoricalDataPoint]:
         cache_key = f"hist_{station.id}_{days}_{hdd_base_temp}"
         if cache_key in self._cache:

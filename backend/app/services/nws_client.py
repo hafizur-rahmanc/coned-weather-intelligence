@@ -271,7 +271,7 @@ class NWSClient:
         self._set_cache(cache_key, items)
         return items
 
-    async def get_daily_forecast(self, station: StationInfo, days: int = 7, hdd_base_temp: float = 65.0) -> List[DailyForecastItem]:
+    async def get_daily_forecast(self, station: StationInfo, days: int = 7, hdd_base_temp: float = 62.0) -> List[DailyForecastItem]:
         cache_key = f"daily_{station.id}_{days}_{hdd_base_temp}"
         cached = self._get_from_cache(cache_key, ttl_seconds=600)
         if cached:

@@ -25,7 +25,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
   const handleResetDefaults = () => {
     setFormData({
-      hdd_base_temp: 65.0,
+      hdd_base_temp: 62.0,
       cold_threshold_elevated: 34.0,
       cold_threshold_high: 24.0,
       cold_threshold_extreme: 14.0,
@@ -86,13 +86,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           {/* HDD Base Temp */}
           <div style={{ marginBottom: '18px' }}>
             <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: textColor, marginBottom: '4px' }}>
-              Heating Degree Days (HDD) Base Temperature (°F)
+              Heating Degree Days (HDD / AHDD) Base Temperature (°F)
             </label>
             <div style={{ fontSize: '11px', color: subTextColor, marginBottom: '8px' }}>
-              Standard utility reference is 65°F; adjust for specific district heating thresholds (e.g. 60°F or 55°F).
+              Con Edison Gas Operations standard reference base is <strong>62.0°F</strong>: <em>Actual Heating Degree Days (AHDD) = 62°F - Daily Mean Temperature</em>. Adjust for custom operational thresholds.
             </div>
             <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-              {[65, 62, 60, 55].map(preset => (
+              {[62, 65, 60, 55].map(preset => (
                 <button
                   type="button"
                   key={preset}
@@ -104,17 +104,18 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     padding: '6px 12px',
                     borderRadius: '6px',
                     fontSize: '12px',
+                    fontWeight: formData.hdd_base_temp === preset ? 700 : 500,
                     cursor: 'pointer'
                   }}
                 >
-                  {preset}°F
+                  {preset}°F {preset === 62 && '(ConEd)'}
                 </button>
               ))}
               <input
                 type="number"
                 step="0.5"
                 value={formData.hdd_base_temp}
-                onChange={e => setFormData({ ...formData, hdd_base_temp: parseFloat(e.target.value) || 65 })}
+                onChange={e => setFormData({ ...formData, hdd_base_temp: parseFloat(e.target.value) || 62 })}
                 style={{
                   width: '80px',
                   padding: '6px 10px',

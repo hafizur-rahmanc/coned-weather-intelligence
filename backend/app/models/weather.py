@@ -86,7 +86,7 @@ class WeatherAlert(BaseModel):
 class GasIndicators(BaseModel):
     station_id: str
     station_name: str
-    hdd_base_temp: float = 65.0
+    hdd_base_temp: float = 62.0
     daily_hdd: float
     forecast_hdd_today: float
     cumulative_hdd_3d: float
@@ -103,7 +103,7 @@ class GasIndicators(BaseModel):
     rapid_drop_message: Optional[str] = None
     composite_weather_index: float
     composite_weather_index_label: str
-    calculation_note: str = "Weather-based operational planning indicators; does not represent metered gas sendout."
+    calculation_note: str = "Con Edison Gas Control: Actual Heating Degree Days (AHDD) = 62°F - Daily Mean Temperature; does not represent metered gas sendout."
 
 class HistoricalDataPoint(BaseModel):
     date: str
@@ -135,7 +135,7 @@ class StationComparisonData(BaseModel):
     summary: str
 
 class UserSettings(BaseModel):
-    hdd_base_temp: float = 65.0
+    hdd_base_temp: float = 62.0
     cold_threshold_elevated: float = 34.0
     cold_threshold_high: float = 24.0
     cold_threshold_extreme: float = 14.0
