@@ -1,6 +1,9 @@
 from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 from typing import Dict, Any, List, Optional
 from fastapi import APIRouter, HTTPException, Query
+
+NY_TZ = ZoneInfo("America/New_York")
 from app.models.weather import (
     StationInfo, CurrentConditions, DailyForecastItem,
     HourlyForecastItem, GasIndicators, WeatherAlert,
@@ -67,29 +70,42 @@ async def get_temperature_trend(station: str = Query("KNYC")):
     recent = await nws_client.get_recent_observations(st, hours=24)
     hourly = await nws_client.get_hourly_forecast(st, limit_hours=48)
     
-    # Observed points
-    observed_points = [
-        {
-            "timestamp": t.isoformat(),
-            "time_label": t.strftime("%a %-I %p"),
+    # Observed points (past 24h) normalized to America/New_York
+    observed_points = []
+    latest_obs_dt = None
+    for idx, (t, temp) in enumerate(recent):
+        t_ny = t.astimezone(NY_TZ) if t.tzinfo else t.replace(tzinfo=timezone.utc).astimezone(NY_TZ)
+        latest_obs_dt = t_ny
+        
+        # For the latest observation, format with minute (e.g. Wed 8:51 AM)
+        is_latest = (idx == len(recent) - 1)
+        if is_latest and t_ny.minute != 0:
+            time_label = t_ny.strftime("%a %-I:%M %p")
+        else:
+            time_label = t_ny.strftime("%a %-I %p")
+            
+        observed_points.append({
+            "timestamp": t_ny.isoformat(),
+            "time_label": time_label,
             "temperature_f": temp,
             "type": "observed"
-        }
-        for t, temp in recent
-    ]
+        })
     
-    # Forecast points
-    forecast_points = [
-        {
-            "timestamp": h.timestamp.isoformat(),
-            "time_label": h.formatted_time,
+    # Forecast points (next 48h) starting strictly after latest observation
+    forecast_points = []
+    for h in hourly:
+        h_dt = h.timestamp.astimezone(NY_TZ) if h.timestamp.tzinfo else h.timestamp.replace(tzinfo=timezone.utc).astimezone(NY_TZ)
+        # Avoid backward jumps: only include forecast periods after latest observation
+        if latest_obs_dt and h_dt <= latest_obs_dt:
+            continue
+        forecast_points.append({
+            "timestamp": h_dt.isoformat(),
+            "time_label": h_dt.strftime("%a %-I %p"),
             "temperature_f": h.temperature_f,
             "type": "forecast"
-        }
-        for h in hourly
-    ]
+        })
     
-    now_iso = datetime.now(timezone.utc).isoformat()
+    now_iso = datetime.now(NY_TZ).isoformat()
     return {
         "station_id": st.id,
         "station_name": st.name,

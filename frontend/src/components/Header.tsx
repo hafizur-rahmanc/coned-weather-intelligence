@@ -137,7 +137,7 @@ export const Header: React.FC<HeaderProps> = ({
               gap: '4px'
             }}>
               <CheckCircle2 size={12} color="#10b981" />
-              <span>Synced {new Date(lastUpdated).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+              <span>Synced {new Date(lastUpdated).toLocaleTimeString('en-US', { timeZone: 'America/New_York', hour: '2-digit', minute: '2-digit' })} EDT</span>
             </div>
           )}
 

@@ -223,9 +223,9 @@ export const TemperatureTrendChart: React.FC<TemperatureTrendChartProps> = ({
           {/* Bottom NOW Marker Time Callout Badge (Eliminates text overlap) */}
           <g>
             <rect
-              x={nowX - 32}
+              x={nowX - 37}
               y={paddingTop + innerHeight + 6}
-              width={64}
+              width={74}
               height={18}
               rx={4}
               fill="#dc2626"
@@ -249,8 +249,8 @@ export const TemperatureTrendChart: React.FC<TemperatureTrendChartProps> = ({
             if (i % 8 === 0 || i === count - 1) {
               const x = getX(i);
 
-              // Suppress standard x-axis label if it's too close to the NOW marker badge (< 52px)
-              if (Math.abs(x - nowX) < 52) {
+              // Suppress standard x-axis label if it's too close to the NOW marker badge (< 58px)
+              if (Math.abs(x - nowX) < 58) {
                 return null;
               }
 

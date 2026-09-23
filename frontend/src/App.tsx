@@ -26,7 +26,11 @@ export const App: React.FC = () => {
 
   // Data states
   const [stations, setStations] = useState<StationInfo[]>([]);
-  const [selectedStationId, setSelectedStationId] = useState<string>('KNYC');
+  const [selectedStationId, setSelectedStationId] = useState<string>(() => {
+    const params = new URLSearchParams(window.location.search);
+    const st = params.get('station');
+    return st && (st.toUpperCase() === 'KHPN' || st.toUpperCase() === 'KNYC') ? st.toUpperCase() : 'KNYC';
+  });
   const [isCompareMode, setIsCompareMode] = useState<boolean>(false);
 
   const [currentConditions, setCurrentConditions] = useState<CurrentConditions | null>(null);
@@ -217,7 +221,12 @@ export const App: React.FC = () => {
         <StationSelector
           stations={stations}
           selectedStationId={selectedStationId}
-          onSelectStation={id => setSelectedStationId(id)}
+          onSelectStation={id => {
+            setSelectedStationId(id);
+            const url = new URL(window.location.href);
+            url.searchParams.set('station', id);
+            window.history.replaceState({}, '', url.toString());
+          }}
           isCompareMode={isCompareMode}
           onToggleCompareMode={comp => setIsCompareMode(comp)}
           isDarkMode={isDarkMode}

@@ -2,12 +2,14 @@ import time
 import math
 import httpx
 from datetime import datetime, timezone, timedelta
+from zoneinfo import ZoneInfo
 from typing import Dict, List, Optional, Any, Tuple
 from app.models.weather import (
     CurrentConditions, HourlyForecastItem, DailyForecastItem,
     WeatherAlert, StationInfo
 )
 
+NY_TZ = ZoneInfo("America/New_York")
 USER_AGENT = "(ConEdisonGasEngineeringDashboard/1.0, gasops-weather@coned.com)"
 
 def c_to_f(c: Optional[float]) -> Optional[float]:
@@ -200,7 +202,7 @@ class NWSClient:
             periods = data["properties"]["periods"][:limit_hours]
             for p in periods:
                 dt_str = p.get("startTime")
-                dt = datetime.fromisoformat(dt_str.replace("Z", "+00:00"))
+                dt = datetime.fromisoformat(dt_str.replace("Z", "+00:00")).astimezone(NY_TZ)
                 fmt_time = dt.strftime("%a %-I %p")
                 
                 temp = float(p.get("temperature", 60.0))
@@ -508,13 +510,15 @@ class NWSClient:
     async def get_recent_observations(self, station: StationInfo, hours: int = 24) -> List[Tuple[datetime, float]]:
         """
         Retrieves past hourly temperatures from NWS station observation history.
+        Normalized to America/New_York timezone and resampled to hourly points.
         """
         cache_key = f"obs_history_{station.id}_{hours}"
         cached = self._get_from_cache(cache_key, ttl_seconds=300)
         if cached:
             return cached
 
-        url = f"https://api.weather.gov/stations/{station.id}/observations?limit={hours * 2}"
+        start_time = (datetime.now(timezone.utc) - timedelta(hours=hours + 4)).strftime("%Y-%m-%dT%H:%M:%SZ")
+        url = f"https://api.weather.gov/stations/{station.id}/observations?start={start_time}&limit=500"
         data = None
         try:
             async with httpx.AsyncClient(timeout=10.0) as client:
@@ -524,7 +528,7 @@ class NWSClient:
         except Exception:
             pass
 
-        history: List[Tuple[datetime, float]] = []
+        raw_points: List[Tuple[datetime, float]] = []
         if data and "features" in data:
             for feat in data["features"]:
                 props = feat.get("properties", {})
@@ -532,18 +536,34 @@ class NWSClient:
                 ts_str = props.get("timestamp")
                 if raw_t is not None and ts_str:
                     try:
-                        dt = datetime.fromisoformat(ts_str.replace("Z", "+00:00"))
+                        dt = datetime.fromisoformat(ts_str.replace("Z", "+00:00")).astimezone(NY_TZ)
                         tf = c_to_f(raw_t)
-                        history.append((dt, tf))
+                        raw_points.append((dt, tf))
                     except Exception:
                         pass
         
         # Sort chronologically
-        history.sort(key=lambda x: x[0])
+        raw_points.sort(key=lambda x: x[0])
+        
+        # Hourly resampling: pick the representative reading per hour (closest to :50 official METAR)
+        hourly_dict = {}
+        for dt, tf in raw_points:
+            key = (dt.year, dt.month, dt.day, dt.hour)
+            if key not in hourly_dict:
+                hourly_dict[key] = (dt, tf)
+            else:
+                existing_dt, _ = hourly_dict[key]
+                if abs(dt.minute - 50) < abs(existing_dt.minute - 50):
+                    hourly_dict[key] = (dt, tf)
+
+        history = sorted(hourly_dict.values(), key=lambda x: x[0])
+        # Always retain the latest observation
+        if raw_points and (not history or raw_points[-1][0] != history[-1][0]):
+            history.append(raw_points[-1])
         
         if not history:
             # Fallback history if API history is unavailable
-            now = datetime.now(timezone.utc)
+            now = datetime.now(NY_TZ)
             base_temp = 64.0 if station.id == "KNYC" else 61.0
             for h in range(hours, 0, -1):
                 t = now - timedelta(hours=h)
