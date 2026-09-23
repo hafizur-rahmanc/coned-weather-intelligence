@@ -6,8 +6,8 @@ from fastapi.responses import FileResponse
 from app.api.endpoints import router as api_router
 
 app = FastAPI(
-    title="Con Edison Gas Engineering - NOAA Weather Intelligence Dashboard",
-    description="Operational weather & load intelligence system for Con Edison Gas Operations powered by NOAA/NWS API (api.weather.gov)",
+    title="Con Edison Gas Control - NOAA Weather Intelligence Dashboard",
+    description="Operational weather & load intelligence system for Con Edison Gas Control powered by NOAA/NWS API (api.weather.gov)",
     version="1.0.0"
 )
 

@@ -105,7 +105,7 @@ export const App: React.FC = () => {
           vsFore
         ] = await Promise.all([
           api.fetchCurrentConditions(selectedStationId),
-          api.fetchDailyForecast(selectedStationId, 7),
+          api.fetchDailyForecast(selectedStationId, 30),
           api.fetchHourlyForecast(selectedStationId, 48),
           api.fetchGasIndicators(selectedStationId),
           api.fetchAlerts(selectedStationId),
@@ -304,7 +304,7 @@ export const App: React.FC = () => {
           gap: '14px'
         }}>
           <div>
-            <strong style={{ color: '#ffffff' }}>Consolidated Edison Company of New York, Inc.</strong> — Gas Engineering & Gas Operations
+            <strong style={{ color: '#ffffff' }}>Consolidated Edison Company of New York, Inc.</strong> — Gas Control
             <div style={{ marginTop: '2px' }}>
               Authoritative meteorological data ingested from the National Oceanic and Atmospheric Administration (NOAA) / National Weather Service (NWS) API (`api.weather.gov`).
             </div>

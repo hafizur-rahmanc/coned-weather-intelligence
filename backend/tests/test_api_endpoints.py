@@ -39,6 +39,18 @@ class TestAPIEndpoints(unittest.TestCase):
         self.assertEqual(res_7d.status_code, 200)
         self.assertEqual(len(res_7d.json()), 7)
 
+        res_14d = self.client.get("/api/weather/forecast?station=KNYC&days=14")
+        self.assertEqual(res_14d.status_code, 200)
+        self.assertEqual(len(res_14d.json()), 14)
+
+        res_21d = self.client.get("/api/weather/forecast?station=KNYC&days=21")
+        self.assertEqual(res_21d.status_code, 200)
+        self.assertEqual(len(res_21d.json()), 21)
+
+        res_30d = self.client.get("/api/weather/forecast?station=KNYC&days=30")
+        self.assertEqual(res_30d.status_code, 200)
+        self.assertEqual(len(res_30d.json()), 30)
+
     def test_hourly_endpoint(self):
         res = self.client.get("/api/weather/hourly?station=KNYC&hours=48")
         self.assertEqual(res.status_code, 200)

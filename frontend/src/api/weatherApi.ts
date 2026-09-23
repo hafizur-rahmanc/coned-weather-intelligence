@@ -19,7 +19,7 @@ export async function fetchCurrentConditions(stationId: string): Promise<Current
   return res.json();
 }
 
-export async function fetchDailyForecast(stationId: string, days: number = 7): Promise<DailyForecastItem[]> {
+export async function fetchDailyForecast(stationId: string, days: number = 30): Promise<DailyForecastItem[]> {
   const res = await fetch(`${API_BASE}/weather/forecast?station=${encodeURIComponent(stationId)}&days=${days}`);
   if (!res.ok) throw new Error(`Failed to fetch forecast for ${stationId}`);
   return res.json();

@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Flame, RefreshCw, Sun, Moon, Settings, ShieldAlert, 
+  RefreshCw, Sun, Moon, Settings, ShieldAlert, 
   Clock, Radio, CheckCircle2 
 } from 'lucide-react';
+import { ConEdisonLogo } from './ConEdisonLogo';
 
 interface HeaderProps {
   lastUpdated: string | null;
@@ -59,20 +60,9 @@ export const Header: React.FC<HeaderProps> = ({
         gap: '16px'
       }}>
         {/* Brand & Title */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-          <div style={{
-            width: '42px',
-            height: '42px',
-            borderRadius: '8px',
-            backgroundColor: '#0066cc',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 0 12px rgba(0, 102, 204, 0.4)'
-          }}>
-            <Flame size={26} color="#ffffff" />
-          </div>
-          <div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <ConEdisonLogo height={42} />
+          <div style={{ borderLeft: '1px solid rgba(255,255,255,0.2)', paddingLeft: '14px' }}>
             <div style={{
               display: 'flex',
               alignItems: 'center',
@@ -80,22 +70,22 @@ export const Header: React.FC<HeaderProps> = ({
             }}>
               <span style={{
                 fontSize: '11px',
-                fontWeight: 700,
+                fontWeight: 800,
                 textTransform: 'uppercase',
                 letterSpacing: '1px',
                 backgroundColor: '#f59e0b',
                 color: '#000',
-                padding: '2px 6px',
+                padding: '2px 7px',
                 borderRadius: '4px'
               }}>
-                Con Edison
+                Gas Control
               </span>
               <span style={{ fontSize: '13px', color: '#93c5fd', fontWeight: 600 }}>
-                Gas Engineering & Gas Operations
+                Operations & Load Intelligence
               </span>
             </div>
             <h1 style={{
-              margin: '2px 0 0 0',
+              margin: '3px 0 0 0',
               fontSize: '19px',
               fontWeight: 800,
               letterSpacing: '-0.3px',

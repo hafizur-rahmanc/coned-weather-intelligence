@@ -30,7 +30,7 @@ def get_station_or_404(station_id: str) -> StationInfo:
 async def health_check():
     return {
         "status": "healthy",
-        "service": "Con Edison Gas Engineering Weather Intelligence API",
+        "service": "Con Edison Gas Control Weather Intelligence API",
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "primary_source": "NOAA / National Weather Service (api.weather.gov)",
         "stations": ["KNYC", "KHPN"]
@@ -48,7 +48,7 @@ async def get_current_weather(station: str = Query("KNYC")):
 @router.get("/weather/forecast", response_model=List[DailyForecastItem])
 async def get_daily_forecast(
     station: str = Query("KNYC"),
-    days: int = Query(7, ge=3, le=7)
+    days: int = Query(30, ge=3, le=30)
 ):
     st = get_station_or_404(station)
     return await nws_client.get_daily_forecast(st, days=days, hdd_base_temp=user_settings.hdd_base_temp)
